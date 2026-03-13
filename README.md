@@ -32,5 +32,24 @@ The function fits two candidate models:<br>
 It selects the 4‑parameter model only if both AIC and BIC are lower; otherwise, it uses the 3‑parameter model.<br>
 This approach helps avoid overfitting while still capturing biological asymmetry if strongly supported by the data.
 
-## Questions or Suggestions?
+# normalize-biomass-drc
+This contains a .R file with a function to prepare dose-response biomass data for the dr_analysis() function by normalizaing it based on percent of the untreated control.
+
+## Description
+This is the function: <br>
+normalize_dr_biomass() - Create percent‑of‑control biomass (bio.pctrl) for herbicide dose–response experiments.<br>
+This helper normalizes raw biomass within each (population, run) group using the mean of untreated controls (dose == 0) as the denominator; controls are set to 100 by definition.
+
+## Data requirements
+Your input data frame must include:<br>
+* population (character): Identifies population/biotype. Example: sensitive, resistant<br>
+* run (numeric): experimental run or block ID used for within‑run normalization <br>
+* dose (numeric): The rate/dose of the herbicide. Units must be consistent for each dose. Dose cannot contain negative values.<br>
+* biomass (numeric): raw biomass measurement (units must be consistent) <br>
+If your data does not include an untreated control, it should. But if it doesn't, treated rows in that group will get NA for bio.pctrl (no valid denominator).
+
+## Output
+normalize_dr_biomass() returns a data frame with all of the original data plus a new column containing the normalized biomass data, bio.pctrl. The function also returns a new Excel file called "dr_data_normalized.xlsx".
+
+# Questions or Suggestions?
 If you are a weed scientist using this tool and have ideas for improvements — new parameters, visualization styles, or support for other model families — please open an Issue or submit a Pull Request. All constructive criticism and friendly advice are welcome!
