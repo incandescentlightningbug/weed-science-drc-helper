@@ -1,0 +1,55 @@
+normalize_dr_biomass <- function(dr_data,
+                                 output_path = "dr_data_normalized.xlsx",
+                                 digits = NA_integer_) {
+  
+  # ---- validations ----
+  if (!is.data.frame(dr_data)) stop("`dr_data` must be a data.frame.")
+  need <- c("population", "run", "dose", "biomass")
+  miss <- setdiff(need, names(dr_data))
+  if (length(miss)) stop("Missing required columns: ", paste(miss, collapse = ", "))
+  
+  if (!is.numeric(dr_data[["dose"]]))
+    stop("Column `dose` must be numeric (0 for controls).")
+  if (!is.numeric(dr_data[["biomass"]]))
+    stop("Column `biomass` must be numeric.")
+  
+  # ---- group key ----
+  grp <- interaction(dr_data[["population"]], dr_data[["run"]], drop = TRUE)
+  
+  # ---- denominator: mean of CONTROLS ONLY (dose == 0) within each group ----
+  is_ctrl <- dr_data[["dose"]] == 0
+  biom_ctrl_only <- ifelse(is_ctrl, dr_data[["biomass"]], NA_real_)
+  ctrl_mean <- tapply(biom_ctrl_only, grp, mean, na.rm = TRUE)
+  denom <- ctrl_mean[as.character(grp)]
+  
+  # ---- compute % of control ----
+  bio <- dr_data[["biomass"]]
+  bio_pctrl <- 100 * (bio / denom)
+  
+  # Controls set to exactly 100
+  bio_pctrl[is_ctrl] <- 100
+  
+  # Handle zero/NA denominators for non-controls
+  bad_denom <- is.na(denom) | denom == 0
+  bio_pctrl[bad_denom & !is_ctrl] <- NA_real_
+  
+  # Optional rounding
+  if (!is.na(digits)) {
+    bio_pctrl <- round(bio_pctrl, digits = digits)
+  }
+  
+  # ---- assemble output and write ----
+  out <- dr_data
+  out[["bio.pctrl"]] <- bio_pctrl
+  
+  # Write to a NEW Excel file (requires writexl)
+  if (!requireNamespace("writexl", quietly = TRUE)) {
+    stop("Package 'writexl' is required to write Excel files. Install with install.packages('writexl').")
+  }
+  writexl::write_xlsx(x = out, path = output_path)
+  
+  # Return updated data frame
+  return(out)
+}
+
+normalize_dr_biomass(dr_data)
