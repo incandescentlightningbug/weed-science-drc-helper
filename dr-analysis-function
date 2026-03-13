@@ -1,0 +1,65 @@
+library(drc)
+library(readxl)
+
+dr_analysis <- function(dr_data) {
+  if (!is.data.frame(dr_data)) {
+    stop("Data needs to be a data frame.")
+  }
+
+  required_cols <- c("bio.pctrl", "dose", "population")
+  if (!all(required_cols %in% names(dr_data))) {
+    stop("Data frame must contain columns: bio.pctrl, dose, population")
+  }
+
+  # 4‑parameter model
+  four_parameter_model <- drm(
+    bio.pctrl ~ dose,
+    population,
+    data = dr_data,
+    fct = LL.4(names = c("b", "lower", "upper", "ed50"))
+  )
+
+  # 3‑parameter model
+  three_parameter_model <- drm(
+    bio.pctrl ~ dose,
+    population,
+    data = dr_data,
+    fct = LL.3(names = c("b", "lower", "ed50"))
+  )
+
+  # Model selection using AIC + BIC
+  if (AIC(four_parameter_model) < AIC(three_parameter_model) &&
+      BIC(four_parameter_model) < BIC(three_parameter_model)) {
+
+    return(list(
+      four_parameter_model = summary(four_parameter_model),
+      ed = as.data.frame(ED(four_parameter_model, c(10, 50, 90), interval = "delta")),
+      compare_ed = compParm(four_parameter_model, "ed50"),
+      compare_b = compParm(four_parameter_model, "b"),
+      compare_lower = compParm(four_parameter_model, "lower"),
+      compare_upper = compParm(four_parameter_model, "upper"),
+      plot = plot(four_parameter_model, type = "bars",
+                  xlab = "Herbicide dose (units)",
+                  ylab = "Plant biomass (% of control)",
+                  conName = "Control")
+    ))
+
+  } else {
+
+    return(list(
+      three_parameter_model = summary(three_parameter_model),
+      ed = as.data.frame(ED(three_parameter_model, c(10, 50, 90), interval = "delta")),
+      compare_ed = as.data.frame(compParm(three_parameter_model, "ed50")),
+      compare_b = as.data.frame(compParm(three_parameter_model, "b")),
+      compare_lower = as.data.frame(compParm(three_parameter_model, "lower")),
+      plot = plot(three_parameter_model, type = "bars",
+                  xlab = "Herbicide dose (units)",
+                  ylab = "Plant biomass (% of control)",
+                  conName = "Control")
+    ))
+  }
+}
+
+# Example usage:
+dr_data <- read_excel("dr_data.xlsx")
+analysis <- dr_analysis(dr_data)
