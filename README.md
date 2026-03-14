@@ -1,5 +1,5 @@
 # weed-science-drc-helper
-This contains .R files with functions to help with weed science dose-response experiment statistics, data cleaning, data manipulation, and data visualization.
+This contains .R files with functions to help with weed science dose-response experiment statistics, data cleaning, data manipulation, and data visualization. There are also two Excel files with example data to show data in the correct format to input into these functions.
 
 ## dr-analysis
 ### Description
